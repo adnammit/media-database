@@ -59,7 +59,6 @@ create or replace function public.addUser(
 	_firstname text,
 	_lastname text)
 returns int as $$
-declare _userid int;
 begin
 
 	insert into public.user(username, email, firstname, lastname)
@@ -69,7 +68,11 @@ begin
 end;
 $$ language plpgsql;
 
-create or replace function public.getUser(_username in text)
+create or replace function public.getUser(
+	_userid in int default null,
+	_username in text default null,
+	_email in text default null
+)
 returns table (
 	userid int,
 	username text,
@@ -89,8 +92,10 @@ begin
 		u.lastname as "lastname",
 		u.active as "active"
 	from public.user u
-	where u.username = _username;
-
+	where (_userid is null or u.id = _userid)
+		and (_username is null or u.username = _username)
+		and (_email is null or u.email = _email)
+	;
 end;
 $$ language plpgsql;
 

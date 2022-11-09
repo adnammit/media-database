@@ -3,9 +3,9 @@ select * from media.title;
 select * from media.usertitle;
 select * from media.mediatype;
 
-select public.addUser('test','test@test.com','testy','mctesterson');
-select public.addUser('mfpilot','solo@test.com','han','solo');
-select public.addUser('foo','foo@test.com','foo','bar');
+select * from public.addUser('test','test@test.com','testy','mctesterson');
+select * from public.addUser('mfpilot','solo@test.com','han','solo');
+select * from public.addUser('foo','foo@test.com','foo','bar');
 
 select * from public.getUser();
 select * from public.getUser(_userid => 1);

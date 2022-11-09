@@ -53,22 +53,41 @@ begin
 
 end $$;
 
-create or replace function public.addUser(
+drop function public.addUser;
+create function public.addUser(
 	_username text,
 	_email text,
 	_firstname text,
 	_lastname text)
-returns int as $$
+returns table (
+	userid int,
+	username text,
+	email text,
+	firstname text,
+	lastname text,
+	active boolean
+) as $$
 begin
 
 	insert into public.user(username, email, firstname, lastname)
 	values (_username, _email, _firstname, _lastname);
-	return (select id from public.user where username = _username);
+
+	return query
+	select
+		u.id as "userid",
+		u.username as "username",
+		u.email as "email",
+		u.firstname as "firstname",
+		u.lastname as "lastname",
+		u.active as "active"
+	from public.user u
+	where u.username = _username;
 
 end;
 $$ language plpgsql;
 
-create or replace function public.getUser(
+drop function public.getUser;
+create function public.getUser(
 	_userid in int default null,
 	_username in text default null,
 	_email in text default null
@@ -99,7 +118,8 @@ begin
 end;
 $$ language plpgsql;
 
-create or replace function public.updateUser(
+drop function public.updateUser;
+create function public.updateUser(
 	_userid in int,
 	_firstname text default null,
 	_lastname text default null,
@@ -137,7 +157,8 @@ end;
 $$ language plpgsql;
 
 -- deleteUser is somewhat redundant -- we can do this with updateUser
-create or replace function public.deleteUser(
+drop function public.deleteUser;
+create function public.deleteUser(
 	_userid in int)
 returns void as $$
 begin
@@ -150,7 +171,8 @@ begin
 end;
 $$ language plpgsql;
 
-create or replace function media.addTitle(
+drop function media.addTitle;
+create function media.addTitle(
 	_moviedbid in int,
 	_imdbid in text,
 	_mediatype in text)
@@ -170,7 +192,8 @@ begin
 end;
 $$ language plpgsql;
 
-create or replace function media.addUserTitle(
+drop function media.addUserTitle;
+create function media.addUserTitle(
 	_userid in int,
 	_moviedbid in int,
 	_imdbid in text,
@@ -197,7 +220,8 @@ begin
 end;
 $$ language plpgsql;
 
-create or replace function media.updateUserTitle(
+drop function media.updateUserTitle;
+create function media.updateUserTitle(
 	_userid in int,
 	_titleid in int,
 	_rating in int DEFAULT null,
@@ -220,7 +244,8 @@ begin
 end;
 $$ language plpgsql;
 
-create or replace function media.getUserTitles(_userid in int)
+drop function media.getUserTitles;
+create function media.getUserTitles(_userid in int)
 returns table (
 	userid int,
 	titleid int,
@@ -250,7 +275,8 @@ begin
 end;
 $$ language plpgsql;
 
-create or replace function media.deleteUserTitle(
+drop function media.deleteUserTitle;
+create function media.deleteUserTitle(
 	_userid in int,
 	_titleid in int)
 returns void as $$

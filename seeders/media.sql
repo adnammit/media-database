@@ -99,6 +99,44 @@ begin
 end;
 $$ language plpgsql;
 
+create or replace function public.updateUser(
+	_userid in int,
+	_firstname text default null,
+	_lastname text default null,
+	_active boolean default null
+)
+returns table (
+	userid int,
+	username text,
+	email text,
+	firstname text,
+	lastname text,
+	active boolean
+) as $$
+begin
+
+	update public.user u
+	set
+		firstname = coalesce(_firstname, u.firstname),
+		lastname = coalesce(_lastname, u.lastname),
+		active = coalesce(_active, u.active)
+	where id = _userid;
+
+	return query
+	select
+		u.id as "userid",
+		u.username as "username",
+		u.email as "email",
+		u.firstname as "firstname",
+		u.lastname as "lastname",
+		u.active as "active"
+	from public.user u
+	where id = _userid;
+
+end;
+$$ language plpgsql;
+
+-- deleteUser is somewhat redundant -- we can do this with updateUser
 create or replace function public.deleteUser(
 	_userid in int)
 returns void as $$

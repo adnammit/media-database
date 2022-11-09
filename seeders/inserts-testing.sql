@@ -5,13 +5,21 @@ select * from media.mediatype;
 
 select public.addUser('test','test@test.com','testy','mctesterson');
 select public.addUser('mfpilot','solo@test.com','han','solo');
-select public.addUser('ss','s@test.com','testy','mctesterson') as userid;
+select public.addUser('foo','foo@test.com','foo','bar');
 
 select * from public.getUser();
 select * from public.getUser(_userid => 1);
 select * from public.getUser(_username => 'test');
-select * from public.getUser(_username => 'foo', _userid => 3);
-select * from public.getUser(_username => 'foo', _userid => 4, _email => 'foo@test.com');
+select * from public.getUser(_username => 'foo', _userid => null);
+select * from public.getUser(_username => null, _userid => 3, _email => null);
+select * from public.getUser(_username => null, _userid => null, _email => null);
+
+select * from public.updateUser(
+	_userid => 1,
+	_firstname => 'marty',
+	_lastname => 'fillmore',
+	_active => false
+);
 
 select media.addUserTitle(
 	_userid => 1,

@@ -53,7 +53,7 @@ begin
 
 end $$;
 
-drop function public.addUser;
+drop function if exists public.addUser;
 create function public.addUser(
 	_username text,
 	_email text,
@@ -86,7 +86,7 @@ begin
 end;
 $$ language plpgsql;
 
-drop function public.getUser;
+drop function if exists public.getUser;
 create function public.getUser(
 	_userid in int default null,
 	_username in text default null,
@@ -118,7 +118,7 @@ begin
 end;
 $$ language plpgsql;
 
-drop function public.updateUser;
+drop function if exists public.updateUser;
 create function public.updateUser(
 	_userid in int,
 	_firstname text default null,
@@ -157,7 +157,7 @@ end;
 $$ language plpgsql;
 
 -- deleteUser is somewhat redundant -- we can do this with updateUser
-drop function public.deleteUser;
+drop function if exists public.deleteUser;
 create function public.deleteUser(
 	_userid in int)
 returns void as $$
@@ -171,11 +171,12 @@ begin
 end;
 $$ language plpgsql;
 
-drop function media.addTitle;
+drop function if exists media.addTitle;
 create function media.addTitle(
 	_moviedbid in int,
 	_imdbid in text,
 	_mediatype in text)
+-- return full obj
 returns int as $$
 declare _mediatypeid int;
 begin
@@ -192,7 +193,7 @@ begin
 end;
 $$ language plpgsql;
 
-drop function media.addUserTitle;
+drop function if exists media.addUserTitle;
 create function media.addUserTitle(
 	_userid in int,
 	_moviedbid in int,
@@ -202,14 +203,24 @@ create function media.addUserTitle(
 	_watched in boolean DEFAULT null,
 	_favorite in boolean DEFAULT null,
 	_queued in boolean DEFAULT null,
-	_active in boolean DEFAULT null)
-returns void as $$
+	_active in boolean DEFAULT true) -- ensure that if it exists and is inactive, we activate it and put it in the state we want
+returns table (
+	userid int,
+	titleid int,
+	moviedbid int,
+	imdbid text,
+	mediatype text,
+	rating int,
+	watched boolean,
+	favorite boolean,
+	queued boolean
+) as $$
 declare _titleid int;
 begin
 
 	_titleid := media.addTitle(_moviedbid, _imdbid, _mediatype);
 
-	if exists (select from media.usertitle where titleid = _titleid and userid = _userid)
+	if exists (select from media.usertitle ut where ut.titleid = _titleid and ut.userid = _userid)
 	then
 		perform media.updateUserTitle(_userid, _titleid, _rating, _watched, _favorite, _queued, _active);
 	else
@@ -217,10 +228,70 @@ begin
 		values (_userid, _titleid, _rating, coalesce(_watched, false), coalesce(_favorite, false), coalesce(_queued, false));
 	end if;
 
+	return query
+	select
+		um.userid as "userid",
+		t.id as "titleid",
+		t.moviedbid as "moviedbid",
+		t.imdbid as "imdbid",
+		mt.enum as "mediatype",
+		um.rating as "rating",
+		um.watched as "watched",
+		um.favorite as "favorite",
+		um.queued as "queued"
+	from media.usertitle um
+		inner join media.title t on t.id = um.titleid
+		inner join media.mediatype mt on mt.id = t.mediatypeid
+	where um.userid = _userid
+		and um.titleid = _titleid
+		and um.active;
+
 end;
 $$ language plpgsql;
 
-drop function media.updateUserTitle;
+drop function if exists media.getUserTitle;
+create function media.getUserTitle(
+	_userid in int default null,
+	_titleid in int default null,
+	_imdbid in text default null
+)
+returns table (
+	userid int,
+	titleid int,
+	moviedbid int,
+	imdbid text,
+	mediatype text,
+	rating int,
+	watched boolean,
+	favorite boolean,
+	queued boolean
+) as $$
+begin
+
+	return query
+	select
+		um.userid as "userid",
+		t.id as "titleid",
+		t.moviedbid as "moviedbid",
+		t.imdbid as "imdbid",
+		mt.enum as "mediatype",
+		um.rating as "rating",
+		um.watched as "watched",
+		um.favorite as "favorite",
+		um.queued as "queued"
+	from media.usertitle um
+		inner join media.title t on t.id = um.titleid
+		inner join media.mediatype mt on mt.id = t.mediatypeid
+	where (_userid is null or um.userid = _userid)
+		and (_titleid is null or um.titleid = _titleid)
+		and (_imdbid is null or t.imdbid = _imdbid)
+		and um.active
+	;
+
+end;
+$$ language plpgsql;
+
+drop function if exists media.updateUserTitle;
 create function media.updateUserTitle(
 	_userid in int,
 	_titleid in int,
@@ -244,38 +315,7 @@ begin
 end;
 $$ language plpgsql;
 
-drop function media.getUserTitles;
-create function media.getUserTitles(_userid in int)
-returns table (
-	userid int,
-	titleid int,
-	moviedbid int,
-	imdbid text,
-	rating int,
-	watched boolean,
-	favorite boolean,
-	queued boolean
-) as $$
-begin
-
-	return query
-	select
-		um.userid as "userid",
-		t.id as "titleid",
-		t.moviedbid as "moviedbid",
-		t.imdbid as "imdbid",
-		um.rating as "rating",
-		um.watched as "watched",
-		um.favorite as "favorite",
-		um.queued as "queued"
-	from media.usertitle um
-		inner join media.title t on t.id = um.titleid
-	where um.userid = _userid and um.active;
-
-end;
-$$ language plpgsql;
-
-drop function media.deleteUserTitle;
+drop function if exists media.deleteUserTitle;
 create function media.deleteUserTitle(
 	_userid in int,
 	_titleid in int)

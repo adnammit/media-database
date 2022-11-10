@@ -21,7 +21,7 @@ select * from public.updateUser(
 	_active => false
 );
 
-select media.addUserTitle(
+select * from media.addUserTitle(
 	_userid => 1,
 	_moviedbid => 299536,
 	_imdbid => 'tt4154756',
@@ -31,16 +31,19 @@ select media.addUserTitle(
 	_favorite => true,
 	_queued => true);
 
-select media.addUserTitle(1, 280, 'tt0103064', 'movie', 3, true, false, true);
-select media.addUserTitle(1, 541305, 'tt8143990', 'movie', 5, true, true, false);
-select media.addUserTitle(1, 2108, 'tt0088847', 'movie', 0, false, false, false);
-select media.addUserTitle(1, 95, 'tt0118276', 'tv', 5, true, true, false);
-select media.addUserTitle(1, 115004, 'tt10155688', 'tv', 0, false, false, true);
-select media.addUserTitle(2, 95, 'tt0118276', 'tv');
-select media.addUserTitle(2, 280, 'tt0103064', 'movie', null, null, true);
+select * from media.addUserTitle(1, 280, 'tt0103064', 'movie', 3, true, false, true);
+select * from media.addUserTitle(1, 541305, 'tt8143990', 'movie', 5, true, true, false);
+select * from media.addUserTitle(1, 2108, 'tt0088847', 'movie', 0, false, false, false);
+select * from media.addUserTitle(1, 95, 'tt0118276', 'tv', 5, true, true, false);
+select * from media.addUserTitle(1, 115004, 'tt10155688', 'tv', 0, false, false, true);
+select * from media.addUserTitle(2, 95, 'tt0118276', 'tv');
+select * from media.addUserTitle(2, 280, 'tt0103064', 'movie', null, null, true);
 
-select * from media.getUserTitles(1);
-select * from media.getUserTitles(2);
+select * from media.getUserTitle(_userid => 1);
+select * from media.getUserTitle(_userid => 1, _titleid => 2);
+select * from media.getUserTitle(_userid => 1, _imdbid => 'tt0103064');
+
+select * from media.getUserTitle(1, 1);
 
 select media.deleteusertitle(1,1);
 

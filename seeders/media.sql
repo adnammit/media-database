@@ -9,8 +9,8 @@ begin
 		id              serial primary key  not null,
 		username        text                not null unique,
 		email           text                not null unique,
-		firstname       text                , -- can be null for now; user can add later
-		lastname        text                , -- can be null for now; user can add later
+		firstname       text                not null,
+		lastname        text                not null,
 		active          boolean             not null default true,
 		datecreated     timestamptz         not null default NOW()
 	);
@@ -57,8 +57,8 @@ drop function if exists public.addUser;
 create function public.addUser(
 	_username text,
 	_email text,
-	_firstname text default null,
-	_lastname text default null)
+	_firstname text,
+	_lastname text)
 returns table (
 	userid int,
 	username text,

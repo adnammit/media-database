@@ -6,7 +6,6 @@ select * from media.mediatype;
 select * from public.addUser('test','test@test.com','testy','mctesterson');
 select * from public.addUser('mfpilot','solo@test.com','han','solo');
 select * from public.addUser('foo','foo@test.com','foo','bar');
-select * from public.addUser('foo','foo@test.com');
 
 select * from public.getUser();
 select * from public.getUser(_userid => 1);
@@ -40,7 +39,7 @@ select * from media.addUserTitle(1, 115004, 'tt10155688', 'tv', 0, false, false,
 select * from media.addUserTitle(2, 95, 'tt0118276', 'tv');
 select * from media.addUserTitle(2, 280, 'tt0103064', 'movie', null, null, true);
 
-select * from media.getUserTitle(_userid => 2);
+select * from media.getUserTitle(_userid => 1);
 select * from media.getUserTitle(_userid => 1, _titleid => 2);
 select * from media.getUserTitle(_userid => 1, _imdbid => 'tt0103064');
 

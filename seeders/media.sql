@@ -112,8 +112,8 @@ begin
 		u.active as "active"
 	from public.user u
 	where (_userid is null or u.id = _userid)
-		and (_username is null or u.username = _username)
-		and (_email is null or u.email = _email)
+		and (_username is null or u.username ilike _username)
+		and (_email is null or u.email ilike _email)
 	;
 end;
 $$ language plpgsql;
@@ -176,7 +176,7 @@ create function media.addTitle(
 	_moviedbid in int,
 	_imdbid in text,
 	_mediatype in text)
--- return full obj
+-- return full obj?
 returns int as $$
 declare _mediatypeid int;
 begin

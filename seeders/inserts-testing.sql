@@ -3,16 +3,17 @@ select * from media.title;
 select * from media.usertitle;
 select * from media.mediatype;
 
-select * from public.addUser('test','test@test.com','testy','mctesterson');
+select * from public.addUser('test','test@test.com','Testy','McTesterson'); -- immutable demo account -- do not change username/email
 select * from public.addUser('mfpilot','solo@test.com','han','solo');
 select * from public.addUser('foo','foo@test.com','foo','bar');
+select * from public.addUser('foo','foo@test.com');
 
 select * from public.getUser();
 select * from public.getUser(_userid => 1);
 select * from public.getUser(_username => 'test');
-select * from public.getUser(_username => 'foo', _userid => null);
+select * from public.getUser(_username => 'FOO', _userid => null);
 select * from public.getUser(_username => null, _userid => 3, _email => null);
-select * from public.getUser(_username => null, _userid => null, _email => null);
+select * from public.getUser(_username => null, _userid => null, _email => 'TEST@TEST.COM');
 
 select * from public.updateUser(
 	_userid => 1,

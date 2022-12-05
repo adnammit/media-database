@@ -46,5 +46,13 @@ select * from media.getUserTitle(_userid => 1, _imdbid => 'tt0103064');
 
 select * from media.getUserTitle(1, 1);
 
+select * from media.updateUserTitle(
+	_userid => 1,
+	_titleid => 13,
+	_rating => null,
+	_watched => null,
+	_favorite => false,
+	_queued => null);
+
 select media.deleteusertitle(1,1);
 

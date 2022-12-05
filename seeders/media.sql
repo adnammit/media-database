@@ -193,6 +193,7 @@ begin
 end;
 $$ language plpgsql;
 
+-- in practice we use this to add new and update existing -- updateUserTitle is just a helper for this proc
 drop function if exists media.addUserTitle;
 create function media.addUserTitle(
 	_userid in int,
@@ -230,21 +231,21 @@ begin
 
 	return query
 	select
-		um.userid as "userid",
+		ut.userid as "userid",
 		t.id as "titleid",
 		t.moviedbid as "moviedbid",
 		t.imdbid as "imdbid",
 		mt.enum as "mediatype",
-		um.rating as "rating",
-		um.watched as "watched",
-		um.favorite as "favorite",
-		um.queued as "queued"
-	from media.usertitle um
-		inner join media.title t on t.id = um.titleid
+		ut.rating as "rating",
+		ut.watched as "watched",
+		ut.favorite as "favorite",
+		ut.queued as "queued"
+	from media.usertitle ut
+		inner join media.title t on t.id = ut.titleid
 		inner join media.mediatype mt on mt.id = t.mediatypeid
-	where um.userid = _userid
-		and um.titleid = _titleid
-		and um.active;
+	where ut.userid = _userid
+		and ut.titleid = _titleid
+		and ut.active;
 
 end;
 $$ language plpgsql;
@@ -270,22 +271,22 @@ begin
 
 	return query
 	select
-		um.userid as "userid",
+		ut.userid as "userid",
 		t.id as "titleid",
 		t.moviedbid as "moviedbid",
 		t.imdbid as "imdbid",
 		mt.enum as "mediatype",
-		um.rating as "rating",
-		um.watched as "watched",
-		um.favorite as "favorite",
-		um.queued as "queued"
-	from media.usertitle um
-		inner join media.title t on t.id = um.titleid
+		ut.rating as "rating",
+		ut.watched as "watched",
+		ut.favorite as "favorite",
+		ut.queued as "queued"
+	from media.usertitle ut
+		inner join media.title t on t.id = ut.titleid
 		inner join media.mediatype mt on mt.id = t.mediatypeid
-	where (_userid is null or um.userid = _userid)
-		and (_titleid is null or um.titleid = _titleid)
+	where (_userid is null or ut.userid = _userid)
+		and (_titleid is null or ut.titleid = _titleid)
 		and (_imdbid is null or t.imdbid = _imdbid)
-		and um.active
+		and ut.active
 	;
 
 end;
@@ -300,17 +301,44 @@ create function media.updateUserTitle(
 	_favorite in boolean DEFAULT null,
 	_queued in boolean DEFAULT null,
 	_active in boolean DEFAULT null)
-returns void as $$
+returns table (
+	userid int,
+	titleid int,
+	moviedbid int,
+	imdbid text,
+	mediatype text,
+	rating int,
+	watched boolean,
+	favorite boolean,
+	queued boolean
+) as $$
 begin
 
-	update media.usertitle
+	update media.usertitle ut
 	set
-		rating = coalesce(_rating, rating),
-		watched = coalesce(_watched, watched),
-		favorite = coalesce(_favorite, favorite),
-		queued = coalesce(_queued, queued),
-		active = coalesce(_active, active)
-	where titleid = _titleid and userid = _userid;
+		rating = coalesce(_rating, ut.rating),
+		watched = coalesce(_watched, ut.watched),
+		favorite = coalesce(_favorite, ut.favorite),
+		queued = coalesce(_queued, ut.queued),
+		active = coalesce(_active, ut.active)
+	where ut.titleid = _titleid and ut.userid = _userid;
+
+	return query
+	select
+		ut.userid as "userid",
+		t.id as "titleid",
+		t.moviedbid as "moviedbid",
+		t.imdbid as "imdbid",
+		mt.enum as "mediatype",
+		ut.rating as "rating",
+		ut.watched as "watched",
+		ut.favorite as "favorite",
+		ut.queued as "queued"
+	from media.usertitle ut
+		inner join media.title t on t.id = ut.titleid
+		inner join media.mediatype mt on mt.id = t.mediatypeid
+	where ut.userid = _userid
+		and ut.titleid = _titleid;
 
 end;
 $$ language plpgsql;
@@ -330,3 +358,34 @@ begin
 end;
 $$ language plpgsql;
 
+
+-- FOR NOW, DO THESE SEEDS EVERYTIME WE REBUILD
+select * from public.addUser('test','test@test.com','Testy','McTesterson'); -- immutable demo account -- do not change username/email
+select * from public.addUser('mfpilot','solo@test.com','han','solo');
+
+select * from media.addUserTitle(
+	_userid => 1,
+	_moviedbid => 299536,
+	_imdbid => 'tt4154756',
+	_mediatype => 'movie',
+	_rating => null,
+	_watched => null,
+	_favorite => true,
+	_queued => true);
+
+select * from media.addUserTitle(1, 280, 'tt0103064', 'movie', 3, true, false, true);
+select * from media.addUserTitle(1, 541305, 'tt8143990', 'movie', 5, true, true, false);
+select * from media.addUserTitle(1, 2108, 'tt0088847', 'movie', 0, false, false, false);
+select * from media.addUserTitle(1, 95, 'tt0118276', 'tv', 5, true, true, false);
+select * from media.addUserTitle(1, 115004, 'tt10155688', 'tv', 0, false, false, true);
+select * from media.addUserTitle(1, 299536, 'tt4154756', 'movie', 0, false, false, true);
+select * from media.addUserTitle(1, 61174, 'tt4163486', 'tv', 0, false, false, true);
+select * from media.addUserTitle(1, 92685, 'tt8050756', 'tv', 0, false, false, true);
+select * from media.addUserTitle(1, 97, 'tt0084827', 'movie', 0, false, false, true);
+select * from media.addUserTitle(1, 364, 'tt0103776', 'movie', 0, false, false, true);
+select * from media.addUserTitle(1, 13403, 'tt0248845', 'movie', 0, false, false, true);
+select * from media.addUserTitle(1, 83631, 'tt7908628', 'tv', 0, false, false, true);
+select * from media.addUserTitle(1, 545611, 'tt6710474', 'movie', 0, false, false, true);
+
+select * from media.addUserTitle(2, 95, 'tt0118276', 'tv');
+select * from media.addUserTitle(2, 280, 'tt0103064', 'movie', null, null, true);

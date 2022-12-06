@@ -51,6 +51,27 @@ begin
 		unique (userid, titleid)
 	);
 
+	drop table if exists media.userlist cascade;
+	create table media.userlist(
+		id              serial primary key  not null,
+		userid          int                 not null references public.user(id),
+		name 	        text                not null,
+		description		text				,
+		active          boolean             not null default true,
+		datecreated     timestamptz         not null default NOW()
+		-- unique (userid, titleid)
+	);
+
+	drop table if exists media.userlistitem cascade;
+	create table media.userlistitem(
+		id              serial primary key  not null,
+		listid			int                 not null references media.userlist(id),
+		titleid			int                 not null references media.title(id),
+		active          boolean             not null default true,
+		datecreated     timestamptz         not null default NOW(),
+		unique (listid, titleid)
+	);
+
 end $$;
 
 drop function if exists public.addUser;
@@ -205,6 +226,7 @@ create function media.addUserTitle(
 	_favorite in boolean DEFAULT null,
 	_queued in boolean DEFAULT null,
 	_active in boolean DEFAULT true) -- ensure that if it exists and is inactive, we activate it and put it in the state we want
+	-- TODO option for array of listids
 returns table (
 	userid int,
 	titleid int,
@@ -355,6 +377,112 @@ begin
 		active = false
 	where _userid = userid and _titleid = titleid;
 
+	update media.userlistitem
+	set
+		active = false
+	where _userid = userid and _titleid = titleid;
+
+end;
+$$ language plpgsql;
+
+drop function if exists media.addUserList;
+create function media.addUserList(
+	_userid int,
+	_name text,
+	_description in text default null)
+returns table (
+	listid int,
+	userid int,
+	name text,
+	description text
+) as $$
+declare _listid int;
+begin
+
+	insert into media.userlist(userid, name, description)
+	values (_userid, _name, _description)
+	returning id into _listid;
+
+	return query
+	select
+		ul.id as "listid",
+		ul.userid as "userid",
+		ul.name as "name",
+		ul.description as "description"
+	from media.userlist ul
+	where ul.id = _listid;
+
+end;
+$$ language plpgsql;
+
+drop function if exists media.addUserListItem;
+create function media.addUserListItem(
+	_listid int,
+	_titleid int)
+returns table (
+	listitemid int,
+	listid int,
+	titleid int
+) as $$
+declare _listitemid int;
+begin
+
+	insert into media.userlistitem(listid, titleid)
+	values (_listid, _titleid)
+	returning id into _listitemid;
+
+	return query
+	select
+		uli.id as "listitemid",
+		uli.listid as "listid",
+		uli.titleid as "titleid"
+	from media.userlistitem uli
+	where uli.id = _listitemid;
+
+end;
+$$ language plpgsql;
+
+drop function if exists media.getUserLists;
+create function media.getUserLists(
+	_userid int)
+returns table (
+	listid int,
+	userid int,
+	name text,
+	description text,
+	titleid int
+	-- with all title data?
+) as $$
+begin
+
+	return query
+	select
+		ul.id as "listid",
+		ul.userid as "userid",
+		ul.name as "name",
+		ul.description as "description",
+		uli.titleid as "titleid"
+	from media.userlist ul
+		inner join media.userlistitem uli on uli.listid = ul.id
+	where ul.userid = _userid and ul.active and uli.active
+	order by ul.id;
+
+end;
+$$ language plpgsql;
+
+drop function if exists media.deleteUserListItem;
+create function media.deleteUserListItem(
+	_userid in int,
+	_listid in int,
+	_titleid in int)
+returns void as $$
+begin
+
+	update media.userlistitem
+	set
+		active = false
+	where _userid = userid and _listid = listid and _titleid = titleid;
+
 end;
 $$ language plpgsql;
 
@@ -386,6 +514,20 @@ select * from media.addUserTitle(1, 364, 'tt0103776', 'movie', 0, false, false, 
 select * from media.addUserTitle(1, 13403, 'tt0248845', 'movie', 0, false, false, true);
 select * from media.addUserTitle(1, 83631, 'tt7908628', 'tv', 0, false, false, true);
 select * from media.addUserTitle(1, 545611, 'tt6710474', 'movie', 0, false, false, true);
+select * from media.addUserTitle(1, 32726, 'tt1561755', 'tv', 5, false, false, true);
 
 select * from media.addUserTitle(2, 95, 'tt0118276', 'tv');
 select * from media.addUserTitle(2, 280, 'tt0103064', 'movie', null, null, true);
+
+select * from media.addUserList(
+	_userid => 1,
+	_name => 'Wind Down Cartoons',
+	_description => 'Mindless cartoons to watch at the end of the day');
+select * from media.addUserListItem(_listid => 1, _titleid => 7);
+select * from media.addUserListItem(_listid => 1, _titleid => 8);
+select * from media.addUserListItem(_listid => 1, _titleid => 14);
+
+select * from media.addUserList(_userid => 1, _name => 'Sci-Fi');
+select * from media.addUserListItem(_listid => 2, _titleid => 2);
+select * from media.addUserListItem(_listid => 2, _titleid => 9);
+

@@ -57,9 +57,23 @@ select * from media.updateUserTitle(
 
 select media.deleteusertitle(1,1);
 
-select * from media.userlist
-select * from media.userlistitem
+select * from media.userlist;
+select * from media.userlistitem;
 select * from media.getUserLists(_userid => 1);
+select * from media.updateUserList(
+	_listid => 2,
+	_name => 'sci-fi',
+	_description => 'milk',
+	_active=> true);
+
+select * from media.addUserList(
+	_userid => 1,
+	_name => 'Halloween Flicks',
+	_description => 'Movies for the spooky season');
+
+select * from media.addUserListItem(_listid => 3, _titleid => 9);
+select media.deleteuserlistitem(_listid => 1, _titleid => 14);
+select media.deleteuserlist(2);
 
 
 -- -- add to seeders list

@@ -415,6 +415,39 @@ begin
 end;
 $$ language plpgsql;
 
+drop function if exists media.updateUserList;
+create function media.updateUserList(
+	_listid int,
+	_name text,
+	_description in text default null,
+	_active in boolean DEFAULT null)
+returns table (
+	listid int,
+	userid int,
+	name text,
+	description text
+) as $$
+begin
+
+	update media.userlist ul
+	set
+		name = coalesce(_name, ul.name),
+		description = coalesce(_description, ul.description),
+		active = coalesce(_active, ul.active)
+	where ul.id = _listid;
+
+	return query
+	select
+		ul.id as "listid",
+		ul.userid as "userid",
+		ul.name as "name",
+		ul.description as "description"
+	from media.userlist ul
+	where ul.id = _listid;
+
+end;
+$$ language plpgsql;
+
 drop function if exists media.addUserListItem;
 create function media.addUserListItem(
 	_listid int,
@@ -455,24 +488,59 @@ returns table (
 ) as $$
 begin
 
+	drop table if exists active_list_items;
+	create temp table active_list_items(
+		listid			int,
+		titleid			int
+	);
+
+	insert into active_list_items
+	select uli.listid, uli.titleid
+	from media.userlistitem uli
+	where uli.active = true;
+
 	return query
 	select
 		ul.id as "listid",
 		ul.userid as "userid",
 		ul.name as "name",
 		ul.description as "description",
-		uli.titleid as "titleid"
+		li.titleid as "titleid"
 	from media.userlist ul
-		inner join media.userlistitem uli on uli.listid = ul.id
-	where ul.userid = _userid and ul.active and uli.active
+		left join active_list_items li on li.listid = ul.id -- left join so we can show lists with nothing in them yet
+	where ul.userid = _userid and ul.active
 	order by ul.id;
+
+end;
+$$ language plpgsql;
+
+drop function if exists media.deleteUserList;
+create function media.deleteUserList(
+	_listid in int)
+returns void as $$
+begin
+
+	if not exists(select from media.userlist where id = _listid)
+	then
+		raise exception 'list does not exist -- cannot delete';
+	end if;
+
+	-- remove items on list first -- consider hard delete here
+	update media.userlistitem
+	set
+		active = false
+	where listid = _listid;
+
+	update media.userlist
+	set
+		active = false
+	where id = _listid;
 
 end;
 $$ language plpgsql;
 
 drop function if exists media.deleteUserListItem;
 create function media.deleteUserListItem(
-	_userid in int,
 	_listid in int,
 	_titleid in int)
 returns void as $$
@@ -481,7 +549,7 @@ begin
 	update media.userlistitem
 	set
 		active = false
-	where _userid = userid and _listid = listid and _titleid = titleid;
+	where _listid = listid and _titleid = titleid;
 
 end;
 $$ language plpgsql;

@@ -377,10 +377,12 @@ begin
 		active = false
 	where _userid = userid and _titleid = titleid;
 
-	update media.userlistitem
+	update media.userlistitem uli
 	set
 		active = false
-	where _userid = userid and _titleid = titleid;
+	from media.userlist ul
+	where ul.id = uli.listid
+		and _userid = ul.userid and _titleid = uli.titleid;
 
 end;
 $$ language plpgsql;
